@@ -21,7 +21,7 @@
     }
     .logo {
       display: block;
-      margin: 4em; auto 30px auto;
+      margin: 4em auto 30px auto;
       max-width: 600px;
     }
     label, select, input, textarea {
@@ -93,162 +93,121 @@
   <div class="overlay">
     <img src="TAM-LogoWhitebrand-Schrift-rechts3.webp" alt="Logo Theater am Marientor" class="logo" />
     <h2 style="text-align:center;">Getränke Vorbestellung</h2>
-
     <div>
       <p><strong>Tischnummer</strong></p>
-      <select id="table"></select>
-
+      <select id="table"><option selected disabled>Bitte auswählen</option></select>
       <p><strong>Vor- und Nachname</strong></p>
       <input type="text" id="name" placeholder="Max Mustermann" />
-
       <p><strong>Bemerkungen</strong></p>
       <textarea id="comment" placeholder="z. B. kein Eis, Allergien, ..."></textarea>
     </div>
-
     <div class="category"><strong>Softdrinks</strong><div id="softdrinks"></div></div>
     <div class="category"><strong>Biere</strong><div id="biere"></div></div>
     <div class="category"><strong>Wein, Prosecco & Aperitifs</strong><div id="wein"></div></div>
-
     <div class="order-info" id="orderInfo"></div>
     <div class="order-list" id="orderList"></div>
     <div class="total" id="totalPrice">Gesamtpreis: 0,00 €</div>
     <button onclick="submitOrder()" style="margin-top: 15px; padding: 10px 20px;">Bestellung abschicken</button>
   </div>
+<script>
+const tableSelect = document.getElementById('table');
+for (let i = 1; i <= 45; i++) {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = `Tisch ${i}`;
+  tableSelect.appendChild(opt);
+}
+const categories = {
+  softdrinks: [
+    { name: "Mineralwasser 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
+    { name: "Apfelschorle 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
+    { name: "Coca Cola 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+    { name: "Coca Cola Zero 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+    { name: "Sprite 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+    { name: "Tonic Water 0,20 l", price: 3.00, hersteller: "Schweppes" },
+    { name: "Red Bull 0,25 l", price: 5.00, hersteller: "Red Bull GmbH" }
+  ],
+  biere: [
+    { name: "König Pilsener 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
+    { name: "König Pilsener alkoholfrei 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
+    { name: "Flensburger Pils 0,33 l", price: 4.00, hersteller: "Flensburger Brauerei" },
+    { name: "Bitburger Radler 0,33 l", price: 4.00, hersteller: "Bitburger Braugruppe GmbH" }
+  ],
+  wein: [
+    { name: "Weißwein Grauburgunder 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+    { name: "Weißwein Lugana 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+    { name: "Rotwein Primitivo 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+    { name: "Prosecco 0,1 l", price: 7.50, hersteller: "Hersteller unbekannt" },
+    { name: "Aperol Spritz", price: 8.90, hersteller: "Aperol / gemixt" },
+    { name: "Wildberry Lillet", price: 8.90, hersteller: "Lillet / gemixt" }
+  ]
+};
+const order = [];
+function updateOrderInfo() {
+  const infoBox = document.getElementById('orderInfo');
+  infoBox.innerHTML = `<p><strong>Tisch:</strong> ${tableSelect.value || '-'}</p><p><strong>Name:</strong> ${name.value || '-'}</p><p><strong>Bemerkung:</strong> ${comment.value || '-'}</p>`;
+}
+function updateOrderList() {
+  updateOrderInfo();
+  const list = document.getElementById('orderList');
+  list.innerHTML = '';
+  let total = 0;
+  order.forEach((item, index) => {
+    total += item.price * item.quantity;
+    const div = document.createElement('div');
+    div.className = 'order-item';
+    div.innerHTML = `<span>${item.name} (${item.hersteller})</span><span class="buttons"><button onclick="decreaseQuantity(${index})">−</button>${item.quantity} × ${item.price.toFixed(2)} €<button onclick="increaseQuantity(${index})">+</button><button onclick="removeItem(${index})">🗑</button></span>`;
+    list.appendChild(div);
+  });
+  document.getElementById('totalPrice').innerText = `Gesamtpreis: ${total.toFixed(2)} €`;
+}
+function addItem(product) {
+  const existing = order.find(p => p.name === product.name);
+  existing ? existing.quantity++ : order.push({ ...product, quantity: 1 });
+  updateOrderList();
+}
+function increaseQuantity(i){ order[i].quantity++; updateOrderList(); }
+function decreaseQuantity(i){ order[i].quantity>1 ? order[i].quantity-- : removeItem(i); updateOrderList(); }
+function removeItem(i){ order.splice(i, 1); updateOrderList(); }
 
-  <script>
-    const tableSelect = document.getElementById('table');
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = 'Bitte auswählen';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    tableSelect.appendChild(defaultOption);
-    for (let i = 1; i <= 45; i++) {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = `Tisch ${i}`;
-      tableSelect.appendChild(opt);
-    }
+function submitOrder() {
+  const table = tableSelect.value;
+  const name = document.getElementById('name').value;
+  const comment = document.getElementById('comment').value;
+  if (!table || !name) {
+    alert('Bitte Tischnummer und Name eingeben.');
+    return;
+  }
+  const total = order.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  fetch("/bestellung", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ table, name, comment, items: order, total })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("✅ Bestellung gesendet!
+Bestellnummer: " + data.dateiname);
+    order.length = 0;
+    updateOrderList();
+    document.getElementById('comment').value = "";
+  })
+  .catch(err => {
+    alert("❌ Fehler beim Senden der Bestellung");
+    console.error(err);
+  });
+}
 
-    const categories = {
-      softdrinks: [
-        { name: "Mineralwasser 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
-        { name: "Apfelschorle 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
-        { name: "Coca Cola 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
-        { name: "Coca Cola Zero 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
-        { name: "Sprite 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
-        { name: "Tonic Water 0,20 l", price: 3.00, hersteller: "Schweppes" },
-        { name: "Red Bull 0,25 l", price: 5.00, hersteller: "Red Bull GmbH" }
-      ],
-      biere: [
-        { name: "König Pilsener 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
-        { name: "König Pilsener alkoholfrei 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
-        { name: "Flensburger Pils 0,33 l", price: 4.00, hersteller: "Flensburger Brauerei" },
-        { name: "Bitburger Radler 0,33 l", price: 4.00, hersteller: "Bitburger Braugruppe GmbH" }
-      ],
-      wein: [
-        { name: "Weißwein Grauburgunder 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
-        { name: "Weißwein Lugana 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
-        { name: "Rotwein Primitivo 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
-        { name: "Prosecco 0,1 l", price: 7.50, hersteller: "Hersteller unbekannt" },
-        { name: "Aperol Spritz", price: 8.90, hersteller: "Aperol / gemixt" },
-        { name: "Wildberry Lillet", price: 8.90, hersteller: "Lillet / gemixt" }
-      ]
-    };
-
-    const order = [];
-
-    function updateOrderInfo() {
-      const table = document.getElementById('table').value;
-      const name = document.getElementById('name').value;
-      const comment = document.getElementById('comment').value;
-      const infoBox = document.getElementById('orderInfo');
-      infoBox.innerHTML = `
-        <p><strong>Tisch:</strong> ${table || '-'}</p>
-        <p><strong>Name:</strong> ${name || '-'}</p>
-        <p><strong>Bemerkung:</strong> ${comment || '-'}</p>
-      `;
-    }
-
-    function updateOrderList() {
-      updateOrderInfo();
-      const list = document.getElementById('orderList');
-      list.innerHTML = '';
-      let total = 0;
-      order.forEach((item, index) => {
-        total += item.price * item.quantity;
-        const div = document.createElement('div');
-        div.className = 'order-item';
-        div.innerHTML = `
-          <span>${item.name} (${item.hersteller})</span>
-          <span class="buttons">
-            <button onclick="decreaseQuantity(${index})">−</button>
-            ${item.quantity} × ${item.price.toFixed(2)} €
-            <button onclick="increaseQuantity(${index})">+</button>
-            <button onclick="removeItem(${index})">🗑</button>
-          </span>
-        `;
-        list.appendChild(div);
-      });
-      document.getElementById('totalPrice').innerText = `Gesamtpreis: ${total.toFixed(2)} €`;
-    }
-
-    function addItem(product) {
-      const existing = order.find(p => p.name === product.name);
-      if (existing) {
-        existing.quantity++;
-      } else {
-        order.push({ ...product, quantity: 1 });
-      }
-      updateOrderList();
-    }
-
-    function increaseQuantity(index) {
-      order[index].quantity++;
-      updateOrderList();
-    }
-
-    function decreaseQuantity(index) {
-      if (order[index].quantity > 1) {
-        order[index].quantity--;
-      } else {
-        removeItem(index);
-      }
-      updateOrderList();
-    }
-
-    function removeItem(index) {
-      order.splice(index, 1);
-      updateOrderList();
-    }
-
-    function submitOrder() {
-      const table = document.getElementById('table').value;
-      const name = document.getElementById('name').value;
-      const comment = document.getElementById('comment').value;
-      if (!table || !name) {
-        alert('Bitte Tischnummer und Name eingeben.');
-        return;
-      }
-
-      let summary = `🪑 Tisch: ${table}\n👤 Name: ${name}\n📝 Bemerkung: ${comment}\n\n🧾 Bestellung:\n`;
-      order.forEach(item => {
-        summary += `- ${item.quantity} × ${item.name} (${item.hersteller}) = ${(item.quantity * item.price).toFixed(2)} €\n`;
-      });
-      summary += `\n💶 Gesamtpreis: ${order.reduce((sum, item) => sum + item.quantity * item.price, 0).toFixed(2)} €`;
-
-      alert(summary);
-    }
-
-    for (const [category, items] of Object.entries(categories)) {
-      const container = document.getElementById(category);
-      items.forEach(product => {
-        const btn = document.createElement('button');
-        btn.className = 'product-button';
-        btn.innerText = `${product.name} (${product.hersteller}) - ${product.price.toFixed(2)} €`;
-        btn.onclick = () => addItem(product);
-        container.appendChild(btn);
-      });
-    }
-  </script>
+for (const [cat, items] of Object.entries(categories)) {
+  const container = document.getElementById(cat);
+  items.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'product-button';
+    btn.innerText = `${p.name} (${p.hersteller}) - ${p.price.toFixed(2)} €`;
+    btn.onclick = () => addItem(p);
+    container.appendChild(btn);
+  });
+}
+</script>
 </body>
 </html>
