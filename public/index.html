@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Getränke Vorbestellung</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      background: url('Bildschirmfoto-2021-10-02-um-16.01.03-1024x602.png') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+    .overlay {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 30px auto;
+      max-width: 600px;
+    }
+    label, select, input, textarea {
+      display: block;
+      width: 100%;
+      margin: 10px 0 5px;
+      padding: 8px;
+      font-size: 1em;
+      color: black;
+    }
+    select, input, textarea {
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .product-button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      color: black;
+    }
+    .product-button:hover {
+      background-color: #ddd;
+    }
+    .order-list {
+      margin-top: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .order-item span.buttons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .order-item button {
+      padding: 2px 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .category {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .order-info {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.2);
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <img src="TAM-LogoWhitebrand-Schrift-rechts3.webp" alt="Logo Theater am Marientor" class="logo" />
+    <h2 style="text-align:center;">Getränke Vorbestellung</h2>
+
+    <div>
+      <p><strong>Tischnummer</strong></p>
+      <select id="table"></select>
+
+      <p><strong>Vor- und Nachname</strong></p>
+      <input type="text" id="name" placeholder="Max Mustermann" />
+
+      <p><strong>Bemerkungen</strong></p>
+      <textarea id="comment" placeholder="z. B. kein Eis, Allergien, ..."></textarea>
+    </div>
+
+    <div class="category"><strong>Softdrinks</strong><div id="softdrinks"></div></div>
+    <div class="category"><strong>Biere</strong><div id="biere"></div></div>
+    <div class="category"><strong>Wein, Prosecco & Aperitifs</strong><div id="wein"></div></div>
+
+    <div class="order-info" id="orderInfo"></div>
+    <div class="order-list" id="orderList"></div>
+    <div class="total" id="totalPrice">Gesamtpreis: 0,00 €</div>
+    <button onclick="submitOrder()" style="margin-top: 15px; padding: 10px 20px;">Bestellung abschicken</button>
+  </div>
+
+  <script>
+    const tableSelect = document.getElementById('table');
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Bitte auswählen';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    tableSelect.appendChild(defaultOption);
+    for (let i = 1; i <= 45; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `Tisch ${i}`;
+      tableSelect.appendChild(opt);
+    }
+
+    const categories = {
+      softdrinks: [
+        { name: "Mineralwasser 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
+        { name: "Apfelschorle 0,25 l", price: 3.00, hersteller: "Rheinfels Quelle" },
+        { name: "Coca Cola 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+        { name: "Coca Cola Zero 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+        { name: "Sprite 0,33 l", price: 4.00, hersteller: "The Coca-Cola Company" },
+        { name: "Tonic Water 0,20 l", price: 3.00, hersteller: "Schweppes" },
+        { name: "Red Bull 0,25 l", price: 5.00, hersteller: "Red Bull GmbH" }
+      ],
+      biere: [
+        { name: "König Pilsener 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
+        { name: "König Pilsener alkoholfrei 0,33 l", price: 4.00, hersteller: "König-Brauerei GmbH" },
+        { name: "Flensburger Pils 0,33 l", price: 4.00, hersteller: "Flensburger Brauerei" },
+        { name: "Bitburger Radler 0,33 l", price: 4.00, hersteller: "Bitburger Braugruppe GmbH" }
+      ],
+      wein: [
+        { name: "Weißwein Grauburgunder 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+        { name: "Weißwein Lugana 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+        { name: "Rotwein Primitivo 0,2 l", price: 7.50, hersteller: "Weingut unbekannt" },
+        { name: "Prosecco 0,1 l", price: 7.50, hersteller: "Hersteller unbekannt" },
+        { name: "Aperol Spritz", price: 8.90, hersteller: "Aperol / gemixt" },
+        { name: "Wildberry Lillet", price: 8.90, hersteller: "Lillet / gemixt" }
+      ]
+    };
+
+    const order = [];
+
+    function updateOrderInfo() {
+      const table = document.getElementById('table').value;
+      const name = document.getElementById('name').value;
+      const comment = document.getElementById('comment').value;
+      const infoBox = document.getElementById('orderInfo');
+      infoBox.innerHTML = `
+        <p><strong>Tisch:</strong> ${table || '-'}</p>
+        <p><strong>Name:</strong> ${name || '-'}</p>
+        <p><strong>Bemerkung:</strong> ${comment || '-'}</p>
+      `;
+    }
+
+    function updateOrderList() {
+      updateOrderInfo();
+      const list = document.getElementById('orderList');
+      list.innerHTML = '';
+      let total = 0;
+      order.forEach((item, index) => {
+        total += item.price * item.quantity;
+        const div = document.createElement('div');
+        div.className = 'order-item';
+        div.innerHTML = `
+          <span>${item.name} (${item.hersteller})</span>
+          <span class="buttons">
+            <button onclick="decreaseQuantity(${index})">−</button>
+            ${item.quantity} × ${item.price.toFixed(2)} €
+            <button onclick="increaseQuantity(${index})">+</button>
+            <button onclick="removeItem(${index})">🗑</button>
+          </span>
+        `;
+        list.appendChild(div);
+      });
+      document.getElementById('totalPrice').innerText = `Gesamtpreis: ${total.toFixed(2)} €`;
+    }
+
+    function addItem(product) {
+      const existing = order.find(p => p.name === product.name);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        order.push({ ...product, quantity: 1 });
+      }
+      updateOrderList();
+    }
+
+    function increaseQuantity(index) {
+      order[index].quantity++;
+      updateOrderList();
+    }
+
+    function decreaseQuantity(index) {
+      if (order[index].quantity > 1) {
+        order[index].quantity--;
+      } else {
+        removeItem(index);
+      }
+      updateOrderList();
+    }
+
+    function removeItem(index) {
+      order.splice(index, 1);
+      updateOrderList();
+    }
+
+    function submitOrder() {
+      const table = document.getElementById('table').value;
+      const name = document.getElementById('name').value;
+      const comment = document.getElementById('comment').value;
+      if (!table || !name) {
+        alert('Bitte Tischnummer und Name eingeben.');
+        return;
+      }
+
+      let summary = `🪑 Tisch: ${table}\n👤 Name: ${name}\n📝 Bemerkung: ${comment}\n\n🧾 Bestellung:\n`;
+      order.forEach(item => {
+        summary += `- ${item.quantity} × ${item.name} (${item.hersteller}) = ${(item.quantity * item.price).toFixed(2)} €\n`;
+      });
+      summary += `\n💶 Gesamtpreis: ${order.reduce((sum, item) => sum + item.quantity * item.price, 0).toFixed(2)} €`;
+
+      alert(summary);
+    }
+
+    for (const [category, items] of Object.entries(categories)) {
+      const container = document.getElementById(category);
+      items.forEach(product => {
+        const btn = document.createElement('button');
+        btn.className = 'product-button';
+        btn.innerText = `${product.name} (${product.hersteller}) - ${product.price.toFixed(2)} €`;
+        btn.onclick = () => addItem(product);
+        container.appendChild(btn);
+      });
+    }
+  </script>
+</body>
+</html>
