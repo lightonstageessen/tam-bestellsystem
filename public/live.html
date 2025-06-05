@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Bestellungen</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>📡 Live-Bestellungen</h2>
+  <div id="orders"></div>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const orders = document.getElementById("orders");
+    const done = new Set(JSON.parse(localStorage.getItem("done") || "[]"));
+
+    function renderOrder(data) {
+      const box = document.createElement("div");
+      box.className = "order";
+      const id = data.table + "-" + Date.now();
+      box.dataset.id = id;
+      if (done.has(id)) box.classList.add("done");
+
+      box.innerHTML = \`
+        <p><strong>🪑 Tisch:</strong> \${data.table}</p>
+        <p><strong>👤 Name:</strong> \${data.name}</p>
+        <p><strong>📝 Bemerkung:</strong> \${data.comment}</p>
+        <ul>\${data.items.map(i => \`<li>\${i.quantity} × \${i.name} (\${i.hersteller})</li>\`).join("")}</ul>
+        <p><strong>💶 Gesamt:</strong> \${data.total.toFixed(2)} €</p>
+        <label><input type="checkbox" onchange="markDone(this)" data-id="\${id}" \${done.has(id) ? "checked" : ""}> Erledigt</label>
+      \`;
+      orders.prepend(box);
+    }
+
+    function markDone(cb) {
+      const id = cb.dataset.id;
+      if (cb.checked) done.add(id); else done.delete(id);
+      localStorage.setItem("done", JSON.stringify([...done]));
+      document.querySelector(\`[data-id="\${id}"]\`)?.classList.toggle("done", cb.checked);
+    }
+
+    const socket = io();
+    socket.on("neue_bestellung", renderOrder);
+  </script>
+</body>
+</html>
